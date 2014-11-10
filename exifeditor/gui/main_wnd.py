@@ -86,8 +86,12 @@ class MainWnd(QtGui.QMainWindow):
     def _on_save_pressed(self):
         if not self._current_image:
             return
+        self.statusBar().showMessage('Saving...')
         if self._current_image.save():
             self._show_image(self._current_image.path)
+            self.statusBar().showMessage('Saved', 2000)
+        else:
+            self.statusBar().showMessage('Error...', 2000)
 
     def _show_image(self, path):
         self.tv_info.reset()
@@ -97,6 +101,9 @@ class MainWnd(QtGui.QMainWindow):
             image = image.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
             self.g_view.setPixmap(QtGui.QPixmap.fromImage(image))
             self._tv_info_model.update(self._current_image)
+            self.tv_info.expandAll()
+            self.tv_info.resizeColumnToContents(0)
+            self.tv_info.resizeColumnToContents(1)
         else:
             self._current_image = None
             self.g_view.setPixmap(QtGui.QPixmap())
