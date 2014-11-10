@@ -15,12 +15,10 @@ __version__ = "2013-04-28"
 import logging
 import os.path
 import time
-import collections
 import textwrap
 
 from PyQt4 import QtCore, QtGui
 
-from exifeditor.logic import exif
 
 _LOG = logging.getLogger(__name__)
 
@@ -102,7 +100,7 @@ class ImagesListModel(QtCore.QAbstractTableModel):
 
 class ExifTreeNode(object):
     def __init__(self, parent, image, key, label):
-        self.clear()
+        self.children = []
         self.parent = parent
         self.image = image
         self.key = key
@@ -117,11 +115,12 @@ class ExifTreeNode(object):
         return self.__repr__()
 
     def __repr__(self):
-        return "<%s %s; %r>" % (self.__class__.__name__,
-                                self.key, self.label) + \
-            "\n".join(" - " + repr(child) for child in self.children) + "</>"
+        return "<%s %s; %r; clen=%d>" % (self.__class__.__name__,
+                                self.key, self.label, len(self))
 
     def clear(self):
+        for child in self.children:
+            child.clear()
         self.children = []
 
     def child_at_row(self, row):
@@ -179,8 +178,8 @@ class ExifTreeModel(QtCore.QAbstractItemModel):
             for tag, tag_label in image.get_groups():
                 group = ExifGroupTreeNode(self.root, image, tag, tag_label)
                 group.children = [ExifValueTreeNode(group, image, itag)
-                                  for itag
-                                  in sorted(image.get_tags_by_group(tag))]
+                                for itag
+                                in sorted(image.get_tags_by_group(tag))]
                 self.root.children.append(group)
         self.emit(QtCore.SIGNAL("layoutChanged()"))
 

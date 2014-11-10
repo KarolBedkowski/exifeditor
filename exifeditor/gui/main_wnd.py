@@ -90,6 +90,7 @@ class MainWnd(QtGui.QMainWindow):
             self._show_image(self._current_image.path)
 
     def _show_image(self, path):
+        self.tv_info.reset()
         if path:
             self._current_image = exif.Image(path)
             image = QtGui.QImage(path)
