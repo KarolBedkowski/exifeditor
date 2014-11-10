@@ -80,12 +80,10 @@ class Image(object):
         label = self.exif.get_tag_label(tag)
         if label:
             label = unicode(label, 'iso-8859-2', errors='replace')
-        info = tag
         descr = self.exif.get_tag_description(tag)
         if descr:
             descr = unicode(descr, 'iso-8859-2', errors='replace')
-            info += '\n' + descr
-        return (label or tag, info)
+        return (label or tag, descr or '')
 
     def get_groups(self):
         """ Get groups of tags in exif """

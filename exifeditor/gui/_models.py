@@ -16,6 +16,7 @@ import logging
 import os.path
 import time
 import collections
+import textwrap
 
 from PyQt4 import QtCore, QtGui
 
@@ -146,7 +147,8 @@ class ExifValueTreeNode(ExifTreeNode):
         super(ExifValueTreeNode, self).__init__(parent, image, key, None)
         self.modified = False
         self.exif_val = None
-        self.label, self.tooltip = image.get_tag_info(key)
+        self.label, tooltip = image.get_tag_info(key)
+        self.tooltip = key + '\n' + textwrap.fill(tooltip, 100)
         self.update()
 
     def update(self):
