@@ -174,7 +174,7 @@ class ExifTreeModel(QtCore.QAbstractItemModel):
         self.emit(QtCore.SIGNAL("layoutAboutToBeChanged()"))
         self.root.clear()
         if image:
-            for tag, tag_label in sorted(image.get_groups()):
+            for tag, tag_label in image.get_groups():
                 group = ExifGroupTreeNode(self.root, image, tag, tag_label)
                 group.children = [ExifValueTreeNode(group, image, itag)
                                   for itag

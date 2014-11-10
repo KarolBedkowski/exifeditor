@@ -69,6 +69,9 @@
              <height>200</height>
             </size>
            </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
            <property name="autoExpandDelay">
             <number>0</number>
            </property>
@@ -81,14 +84,15 @@
            <attribute name="headerCascadingSectionResizes">
             <bool>true</bool>
            </attribute>
+           <attribute name="headerHighlightSections">
+            <bool>true</bool>
+           </attribute>
           </widget>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="b_save">
-          <property name="text">
-           <string>Save</string>
-          </property>
+          <widget class="QPushButton" name="b_save">
+           <property name="text">
+            <string>Save</string>
+           </property>
+          </widget>
          </widget>
         </item>
        </layout>

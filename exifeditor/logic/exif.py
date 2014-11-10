@@ -15,6 +15,16 @@ __version__ = "2014-11-09"
 from gi.repository import GExiv2
 
 
+
+_EXIF_GROUP_SORTING = {
+    'Exif.Image': -100,
+    'Exif.Photo': -80,
+    'Xmp.dc': -50,
+    'Exif.GPSInfo': -30,
+    'Iptc.Application2': -29,
+}
+
+
 class Image(object):
     """Image file representation. """
     def __init__(self, path):
@@ -88,7 +98,8 @@ class Image(object):
         for tag in self.exif.get_tags():
             prefix = tag.rsplit('.', 1)[0]
             groups[prefix] = None
-        self.groups = sorted(groups.iterkeys())
+        self.groups = sorted(groups.iterkeys(),
+                             key=lambda x: (_EXIF_GROUP_SORTING.get(x, 0), x))
 
     def debug_tag(self, tag):
         print 'Tag:', tag, '\t\t\tLabel:', self.exif.get_tag_label(tag),
