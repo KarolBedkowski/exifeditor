@@ -49,8 +49,8 @@ class MainWnd(QtGui.QMainWindow):
         self.lv_files.setModel(model)
 
         # exif list
-        self._lv_info_model = _models.ExifListModel()
-        self.lv_info.setModel(self._lv_info_model)
+        self._tv_info_model = _models.ExifTreeModel()
+        self.tv_info.setModel(self._tv_info_model)
 
         self._bind()
 
@@ -83,11 +83,10 @@ class MainWnd(QtGui.QMainWindow):
             image = QtGui.QImage(path)
             image = image.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
             self.g_view.setPixmap(QtGui.QPixmap.fromImage(image))
-            self._lv_info_model.update(path)
-            self.lv_info.resizeColumnsToContents()
+            self._tv_info_model.update(path)
         else:
             self.g_view.setPixmap(QtGui.QPixmap())
-            self._lv_info_model.update(None)
+            self._tv_info_model.update(None)
 #        pitem = QtGui.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(image))
 #        scene = QtGui.QGraphicsScene()
 #        scene.addItem(pitem)
