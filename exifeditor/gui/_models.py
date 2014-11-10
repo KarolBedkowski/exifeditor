@@ -56,16 +56,15 @@ class ImagesListModel(QtCore.QAbstractTableModel):
         items = ((fname, os.path.join(path, fname))
                  for fname in os.listdir(path))
         images = sorted(fname_fpath
-                  for fname_fpath in items
-                  if os.path.isfile(fname_fpath[1])
-                  and _is_image(fname_fpath[0]))
+                        for fname_fpath in items
+                        if os.path.isfile(fname_fpath[1])
+                        and _is_image(fname_fpath[0]))
 
         self.items = [ImagesListItem(fname,
                                      os.path.getsize(fpath),
                                      os.path.getmtime(fpath))
                       for fname, fpath in images]
         self.emit(QtCore.SIGNAL("layoutChanged()"))
-
 
     def rowCount(self, _parent=QtCore.QModelIndex()):
         return len(self.items)
@@ -100,69 +99,15 @@ class ImagesListModel(QtCore.QAbstractTableModel):
         return None
 
 
-class ExifListItem(object):
-    def __init__(self, key, value):
-        self.key = key
-        self.value = value
-
-    def __repr__(self):
-        return "<ExifListItem %r=%r>" % (self.key, self.value)
-
-
-class ExifListModel(QtCore.QAbstractTableModel):
-
-    _HEADERS = ("Key", "Value")
-
-    def __init__(self, parent=None):
-        super(ExifListModel, self).__init__(parent)
-        self.items = []
-
-    def update(self, path):
-        _LOG.debug("ExifListModel.update(%s)", path)
-        self.emit(QtCore.SIGNAL("layoutAboutToBeChanged()"))
-        if path:
-            self.items = [ExifListItem(key, val)
-                          for key, val in sorted(exif.load(path))]
-        else:
-            self.items = []
-        self.emit(QtCore.SIGNAL("layoutChanged()"))
-
-    def rowCount(self, _parent=QtCore.QModelIndex()):
-        return len(self.items)
-
-    def columnCount(self, _parent):
-        return 2
-
-    def headerData(self, col, orientation, role):
-        if orientation == QtCore.Qt.Horizontal and \
-                role == QtCore.Qt.DisplayRole:
-            return QtCore.QVariant(self._HEADERS[col])
-        return QtCore.QVariant()
-
-    def data(self, index, role):
-        if not index.isValid():
-            return QtCore.QVariant()
-        if role == QtCore.Qt.DisplayRole:
-            row = self.items[index.row()]
-            col = index.column()
-            if col == 0:
-                return QtCore.QVariant(row.key)
-            elif col == 1:
-                return QtCore.QVariant(row.value)
-        return QtCore.QVariant()
-
-    def node_from_index(self, index):
-        if index.row() < len(self.items):
-            return self.items[index.row()]
-        return None
-
-
 class ExifTreeNode(object):
-    def __init__(self, parent, key, value):
+    def __init__(self, parent, image, key, label):
         self.clear()
         self.parent = parent
+        self.image = image
         self.key = key
-        self.value = value
+        self.label = label
+        self.value = None
+        self.tooltip = QtCore.QVariant(key)
 
     def __len__(self):
         return len(self.children)
@@ -172,19 +117,11 @@ class ExifTreeNode(object):
 
     def __repr__(self):
         return "<%s %s; %r>" % (self.__class__.__name__,
-                                self.key, self.value) + \
+                                self.key, self.label) + \
             "\n".join(" - " + repr(child) for child in self.children) + "</>"
 
     def clear(self):
         self.children = []
-
-    def get_child(self, oid):
-        for child in self.children:
-            if child.oid == oid:
-                return child
-        _LOG.error("TreeNode.get_child(oid=%r) not found in %r",
-                   oid, self)
-        return None
 
     def child_at_row(self, row):
         """The row-th child of this node."""
@@ -200,23 +137,28 @@ class ExifTreeNode(object):
 
 class ExifGroupTreeNode(ExifTreeNode):
     """ Group node """
-    def __init__(self, parent, group):
-        super(ExifGroupTreeNode, self).__init__(parent, group, None)
+    pass
 
 
 class ExifValueTreeNode(ExifTreeNode):
     """ Group node """
-    def __init__(self, parent, key, value):
-        display_key = key.split(' ', 1)[1]
-        super(ExifValueTreeNode, self).__init__(parent, display_key, value)
-        self.exif_key = key
+    def __init__(self, parent, image, key):
+        super(ExifValueTreeNode, self).__init__(parent, image, key, None)
         self.modified = False
+        self.exif_val = None
+        self.label, self.tooltip = image.get_tag_info(key)
+        self.update()
+
+    def update(self):
+        self.exif_val, self.value = self.image.get_value(self.key)
 
     def setData(self, column, value):
+        value = unicode(value)
         if column == 1 and self.value != value:
-            self.value = value
-            self.modified = True
-            return True
+            if self.image.set_value(self.key, value):
+                self.modified = True
+                self.update()
+                return True
         return False
 
 
@@ -224,25 +166,19 @@ class ExifTreeModel(QtCore.QAbstractItemModel):
     """ Groups & sources tree model.    """
     def __init__(self, parent=None):
         super(ExifTreeModel, self).__init__(parent)
-        self.root = ExifTreeNode(None, 'root', None)
+        self.root = ExifTreeNode(None, None, 'root', None)
         self.update(None)
 
-    def update(self, path):
+    def update(self, image):
         """ Refresh whole tree model from database. """
         self.emit(QtCore.SIGNAL("layoutAboutToBeChanged()"))
         self.root.clear()
-        if path:
-            exif_data = collections.defaultdict(dict)
-            # group by key prefix
-            for key, val in exif.load(path):
-                prefix = key.split(' ', 1)[0]
-                exif_data[prefix][key] = val
-            # create objects
-            for key in sorted(exif_data.iterkeys()):
-                group = ExifGroupTreeNode(self.root, key)
-                group.children = [ExifValueTreeNode(group, ikey, ival)
-                                  for ikey, ival
-                                  in sorted(exif_data[key].iteritems())]
+        if image:
+            for tag, tag_label in sorted(image.get_groups()):
+                group = ExifGroupTreeNode(self.root, image, tag, tag_label)
+                group.children = [ExifValueTreeNode(group, image, itag)
+                                  for itag
+                                  in sorted(image.get_tags_by_group(tag))]
                 self.root.children.append(group)
         self.emit(QtCore.SIGNAL("layoutChanged()"))
 
@@ -250,12 +186,15 @@ class ExifTreeModel(QtCore.QAbstractItemModel):
         """Returns the data stored under the given role for the item referred
            to by the index."""
         if not index.isValid():
-            return QtCore.QVariant()
-        if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
+            pass
+        elif role == QtCore.Qt.DisplayRole:
             node = self.node_from_index(index)
-            if index.column() == 0:
-                return QtCore.QVariant(str(node.key))
-            return QtCore.QVariant(str(node.value or ""))
+            return QtCore.QVariant((node.value if index.column() == 1
+                                    else node.label) or "")
+        elif role == QtCore.Qt.EditRole:
+            if index.column() == 1:
+                node = self.node_from_index(index)
+                return QtCore.QVariant(node.exif_val or "")
         elif role == QtCore.Qt.FontRole:
             node = self.node_from_index(index)
             if isinstance(node, ExifGroupTreeNode):
@@ -267,6 +206,9 @@ class ExifTreeModel(QtCore.QAbstractItemModel):
                 font = QtGui.QFont()
                 font.setBold(True)
                 return font
+        elif role == QtCore.Qt.ToolTipRole:
+            return self.node_from_index(index).tooltip
+
         return QtCore.QVariant()
 
     def headerData(self, section, orientation, role):

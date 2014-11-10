@@ -20,6 +20,7 @@ from PyQt4 import QtGui, uic, QtCore
 from exifeditor.gui import _models
 from exifeditor.gui import _resources_rc
 from exifeditor.lib.appconfig import AppConfig
+from exifeditor.logic import exif
 
 _ = gettext.gettext
 _LOG = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class MainWnd(QtGui.QMainWindow):
         uic.loadUi(self._appconfig.get_data_file("main.ui"), self)
 
         self._current_path = None
+        self._current_image = None
 
         # setup dirs tree
         self._tv_dirs_model = model = QtGui.QFileSystemModel()
@@ -55,8 +57,8 @@ class MainWnd(QtGui.QMainWindow):
         self._bind()
 
     def _bind(self):
-#        self.tv_dirs.activated.connect(self._on_tv_dirs_activated)
         self.tv_dirs.clicked.connect(self._on_tv_dirs_activated)
+        self.b_save.pressed.connect(self._on_save_pressed)
         # file list model
         sel_model = self.lv_files.selectionModel()
         sel_model.currentChanged.connect(self._on_lv_files_selection)
@@ -69,6 +71,8 @@ class MainWnd(QtGui.QMainWindow):
         self._on_lv_files_selection(None)
 
     def _on_lv_files_selection(self, _index):
+        if not self._current_path:
+            return
         index = self.lv_files.selectionModel().currentIndex()
         if index >= 0:
             item = self._lv_files_model.node_from_index(index)
@@ -78,13 +82,21 @@ class MainWnd(QtGui.QMainWindow):
                 return
         self._show_image(None)
 
+    def _on_save_pressed(self):
+        if not self._current_image:
+            return
+        if self._current_image.save():
+            self._show_image(self._current_image.path)
+
     def _show_image(self, path):
         if path:
+            self._current_image = exif.Image(path)
             image = QtGui.QImage(path)
             image = image.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
             self.g_view.setPixmap(QtGui.QPixmap.fromImage(image))
-            self._tv_info_model.update(path)
+            self._tv_info_model.update(self._current_image)
         else:
+            self._current_image = None
             self.g_view.setPixmap(QtGui.QPixmap())
             self._tv_info_model.update(None)
 #        pitem = QtGui.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(image))
