@@ -62,13 +62,14 @@ class MainWnd(QtGui.QMainWindow):
         # file list model
         sel_model = self.lv_files.selectionModel()
         sel_model.currentChanged.connect(self._on_lv_files_selection)
-        sel_model.selectionChanged.connect(self._on_lv_files_selection)
+#        sel_model.selectionChanged.connect(self._on_lv_files_selection)
 
     def _on_tv_dirs_activated(self, index):
         node = self._tv_dirs_model.filePath(index)
         self._current_path = str(node)
+        self.lv_files.clearSelection()
         self._lv_files_model.update(str(node))
-        self._on_lv_files_selection(None)
+        self._show_image(None)
 
     def _on_lv_files_selection(self, _index):
         if not self._current_path:
