@@ -125,6 +125,8 @@ class ExifTreeNode(object):
 
     def child_at_row(self, row):
         """The row-th child of this node."""
+        if row < 0 or row >= len(self.children):
+            return None
         return self.children[row]
 
     def row(self):
