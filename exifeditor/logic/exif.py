@@ -12,8 +12,11 @@ __copyright__ = u"Copyright (c) Karol Będkowski, 2014"
 __version__ = "2014-11-09"
 
 
+import logging
+
 from gi.repository import GExiv2
 
+_LOG = logging.getLogger(__name__)
 
 _EXIF_GROUP_SORTING = {
     'Exif.Image': -100,
@@ -34,7 +37,9 @@ class Image(object):
 
     def save(self):
         """ Save changes """
-        self.exif.save_file()
+        _LOG.info("Image.save %s", self.path)
+        res = self.exif.save_file()
+        _LOG.info("Image.save done: res=%r", res)
         return True
 
     def get_value(self, tag):
@@ -75,12 +80,14 @@ class Image(object):
                 yield key
 
     def get_tag_label(self, tag):
+        """ Get human friendly tag name. """
         label = self.exif.get_tag_label(tag)
         if label:
             label = unicode(label, 'iso-8859-2', errors='replace')
         return label or tag
 
     def get_tag_descr(self, tag):
+        """ Get human friendly tag description. """
         descr = self.exif.get_tag_description(tag)
         if descr:
             descr = unicode(descr, 'iso-8859-2', errors='replace')
@@ -101,12 +108,18 @@ class Image(object):
                              key=lambda x: (_EXIF_GROUP_SORTING.get(x, 0), x))
 
     def debug_tag(self, tag):
-        print 'Tag:', tag, '\t\t\tLabel:', self.exif.get_tag_label(tag),
-        print '\t\t\tType:', self.exif.get_tag_type(tag)
-        print 'Value:', repr(self.exif.get(tag))[:100]
-        print 'Interpreted:', repr(self.exif.\
-                                   get_tag_interpreted_string(tag))[:100]
-        print '---------------------------------------------'
+        """ Get given tag informations (for debugging. """
+        return {
+            "Label": repr(self.exif.get_tag_label(tag)),
+            "Type": repr(self.exif.get_tag_type(tag)),
+            "Value": repr(self.exif.get(tag))[:100],
+            "Interp": repr(self.exif.get_tag_interpreted_string(tag))[:100],
+        }
+
+    def debug_tag_log(self, tag):
+        _LOG.debug("Image.debug_tag_log: tag=%s; %s", tag,
+                   "; ".join(key + ": " + repr(val)
+                             for key, val in self.debug_tag(tag).iteritems()))
 
     _description_tag = 'Exif.Image.ImageDescription'
 
@@ -119,6 +132,7 @@ class Image(object):
             return
         self.exif[self._description_tag] = value
 
+    """  Exif.Image.ImageDescription property """
     description = property(_get_description, _set_description)
 
     _comment_tag = 'Exif.Photo.UserComment'
@@ -144,6 +158,7 @@ class Image(object):
         except UnicodeError:
             self.exif[self._comment_tag] = 'Unicode ' + value
 
+    """  Exif.Photo.UserComment property """
     comment = property(_get_comment, _set_comment)
 
     _artist_tag = 'Exif.Image.Artist'
@@ -158,6 +173,7 @@ class Image(object):
         if self._get_artist() != value:
             self.exif[self._artist_tag] = value
 
+    """  Exif.Image.Artist property. """
     artist = property(_get_artist, _set_artist)
 
     _copyright_tag = 'Exif.Image.Copyright'
@@ -170,6 +186,7 @@ class Image(object):
         if value != self._get_copyright():
             self.exif[self._copyright_tag] = value
 
+    """  Exif.Image.Copyright property. """
     copyright = property(_get_copyright, _set_copyright)
 
     _datetime_tag = 'Exif.Image.DateTime'
@@ -182,4 +199,5 @@ class Image(object):
         if value != self._get_datetime():
             self.exif[self._datetime_tag] = value
 
+    """  Exif.Image.DateTime property. """
     datetime = property(_get_datetime, _set_datetime)
