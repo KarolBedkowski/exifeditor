@@ -118,6 +118,9 @@ class ExifTreeNode(object):
         return "<%s %s; %r; clen=%d>" % (self.__class__.__name__,
                                 self.key, self.label, len(self))
 
+    def get_tooltip(self):
+        return self.tooltip
+
     def clear(self):
         for child in self.children:
             child.clear()
@@ -148,9 +151,15 @@ class ExifValueTreeNode(ExifTreeNode):
         super(ExifValueTreeNode, self).__init__(parent, image, key, None)
         self.modified = False
         self.exif_val = None
-        self.label, tooltip = image.get_tag_info(key)
-        self.tooltip = key + '\n' + textwrap.fill(tooltip, 100)
+        self.label = image.get_tag_label(key)
+        self.tooltip = None
         self.update()
+
+    def get_tooltip(self):
+        if not self.tooltip:
+            self.tooltip = self.key + '\n' + \
+                    textwrap.fill(self.image.get_tag_descr(self.key), 100)
+        return self.tooltip
 
     def update(self):
         self.exif_val, self.value = self.image.get_value(self.key)
@@ -210,7 +219,7 @@ class ExifTreeModel(QtCore.QAbstractItemModel):
                 font.setBold(True)
                 return font
         elif role == QtCore.Qt.ToolTipRole:
-            return self.node_from_index(index).tooltip
+            return self.node_from_index(index).get_tooltip()
 
         return QtCore.QVariant()
 

@@ -15,7 +15,6 @@ __version__ = "2014-11-09"
 from gi.repository import GExiv2
 
 
-
 _EXIF_GROUP_SORTING = {
     'Exif.Image': -100,
     'Exif.Photo': -80,
@@ -40,9 +39,8 @@ class Image(object):
 
     def get_value(self, tag):
         """ Get value for given tag """
-        #self.debug_tag(tag)
         val = self.exif.get(tag)
-        #val = val.replace('\0', '').replace('\n', '; ').strip()
+        # val = val.replace('\0', '').replace('\n', '; ').strip()
         val = val.decode('utf-8', errors='replace')
         tag_type = self.exif.get_tag_type(tag)
         if tag_type in ('Ascii', 'XmpSeq', 'XmpText', 'XmpBag'):
@@ -76,14 +74,17 @@ class Image(object):
             if key.startswith(group):
                 yield key
 
-    def get_tag_info(self, tag):
+    def get_tag_label(self, tag):
         label = self.exif.get_tag_label(tag)
         if label:
             label = unicode(label, 'iso-8859-2', errors='replace')
+        return label or tag
+
+    def get_tag_descr(self, tag):
         descr = self.exif.get_tag_description(tag)
         if descr:
             descr = unicode(descr, 'iso-8859-2', errors='replace')
-        return (label or tag, descr or '')
+        return descr or ''
 
     def get_groups(self):
         """ Get groups of tags in exif """
