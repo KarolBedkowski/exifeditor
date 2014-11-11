@@ -147,6 +147,8 @@ class Image(object):
             comment = unicode(comment, 'utf-8')
         elif comment.startswith('ASCII'):
             comment = comment[5:].lstrip('\x00')
+        elif comment.startswith('charset="Ascii"'):
+            comment = comment[15:].lstrip()
         return comment
 
     def _set_comment(self, value):
