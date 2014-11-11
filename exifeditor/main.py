@@ -27,6 +27,8 @@ def _parse_opt():
     group = optparse.OptionGroup(optp, "Debug options")
     group.add_option("--debug", "-d", action="store_true", default=False,
                      help="enable debug messages")
+    group.add_option("--debug-qt", action="store_true", default=False,
+                     help="enable debug messages in PyQt4 namespace")
     group.add_option("--shell", action="store_true", default=False,
                      help="start shell")
     optp.add_option_group(group)
@@ -41,6 +43,8 @@ def run():
     # logowanie
     from exifeditor.lib.logging_setup import logging_setup
     logging_setup("exifeditor.log", options.debug)
+    logging.getLogger('PyQt4').setLevel(logging.DEBUG if options.debug_qt
+                                        else logging.WARN)
 
     # app config
     from exifeditor.lib import appconfig
