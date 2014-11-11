@@ -9,7 +9,7 @@ Licence: GPLv2+
 
 __author__ = u"Karol Będkowski"
 __copyright__ = u"Copyright (c) Karol Będkowski, 2014"
-__version__ = "2013-04-28"
+__version__ = "2014-11-11"
 
 import gettext
 import logging
@@ -46,9 +46,6 @@ class MainWnd(QtGui.QMainWindow):
         self.tv_dirs.setModel(model)
         self.tv_dirs.setRootIndex(model.index(QtCore.QDir.rootPath()))
         self.tv_dirs.setCurrentIndex(model.index(QtCore.QDir.currentPath()))
-#        self.tv_dirs.selectionModel().select(
-#               model.index(QtCore.QDir.currentPath()),
-#               QtGui.QItemSelectionModel.ClearAndSelect)
         self.tv_dirs.setColumnWidth(0, 200)
 
         # setup files list
@@ -76,37 +73,8 @@ class MainWnd(QtGui.QMainWindow):
         self.te_copyright.textEdited.connect(self._on_te_copyright_tch)
         self.dt_datetime.dateTimeChanged.connect(self._on_te_datetime_ch)
 
-    def _on_tv_dirs_activated(self, index):
-        node = self._tv_dirs_model.filePath(index)
-        self._current_path = str(node)
-        self.lv_files.clearSelection()
-        self._lv_files_model.update(str(node))
-        self.lv_files.resizeColumnsToContents()
-        self._clear()
-
-    def _on_lv_files_selection(self, _index):
-        if not self._current_path:
-            return
-        index = self.lv_files.selectionModel().currentIndex()
-        if index >= 0:
-            item = self._lv_files_model.node_from_index(index)
-            if item:
-                self._show_image(os.path.join(self._current_path,
-                                              str(item.name)))
-                return
-        self._clear()
-
-    def _on_save_pressed(self):
-        if not self._current_image:
-            return
-        self.statusBar().showMessage('Saving...')
-        if self._current_image.save():
-            self._show_image(self._current_image.path)
-            self.statusBar().showMessage('Saved', 2000)
-        else:
-            self.statusBar().showMessage('Error...', 2000)
-
     def _clear(self):
+        """ Clear all displayed information. """
         self.tv_info.reset()
         self._current_image = None
         self.g_view.setPixmap(QtGui.QPixmap())
@@ -116,8 +84,15 @@ class MainWnd(QtGui.QMainWindow):
         self.te_artist.setPlainText("")
         self.te_copyright.setText("")
         self.dt_datetime.setDateTime(QtCore.QDateTime.currentDateTime())
+        # set text fields read-only
+        self.te_description.setEnabled(False)
+        self.te_comment.setEnabled(False)
+        self.te_artist.setEnabled(False)
+        self.te_copyright.setEnabled(False)
+        self.dt_datetime.setEnabled(False)
 
     def _show_image(self, path):
+        """ load image from `path` and display exif informations. """
         self.statusBar().showMessage('Loading...')
         self.tv_info.reset()
         self._current_image = exif.Image(path)
@@ -129,9 +104,14 @@ class MainWnd(QtGui.QMainWindow):
         self.statusBar().clearMessage()
 
     def _update_tab_basic(self):
+        """ Show basic informations ("Basic" tab) """
+        # enable fields
+        self.te_description.setEnabled(True)
+        self.te_comment.setEnabled(True)
+        self.te_artist.setEnabled(True)
+        self.te_copyright.setEnabled(True)
+        self.dt_datetime.setEnabled(True)
         image = self._current_image
-        if not image:
-            return
         self.te_description.setPlainText(image.description)
         self.te_comment.setPlainText(image.comment)
         self.te_artist.setPlainText(image.artist)
@@ -144,17 +124,44 @@ class MainWnd(QtGui.QMainWindow):
             pass
 
     def _update_tab_exif(self):
+        """ Show detailed exif data. """
         self._tv_info_model.update(self._current_image)
         self.tv_info.expandAll()
         self.tv_info.resizeColumnToContents(0)
         self.tv_info.resizeColumnToContents(1)
 
-#        pitem = QtGui.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(image))
-#        scene = QtGui.QGraphicsScene()
-#        scene.addItem(pitem)
-#        self.g_view.setScene(scene)
-#        self.g_view.fitInView(scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
-#        self.g_view.show()
+    def _on_tv_dirs_activated(self, index):
+        """ Select directory action. Show file list. """
+        node = self._tv_dirs_model.filePath(index)
+        self._current_path = str(node)
+        self.lv_files.clearSelection()
+        self._lv_files_model.update(str(node))
+        self.lv_files.resizeColumnsToContents()
+        self._clear()
+
+    def _on_lv_files_selection(self, _index):
+        """ File select action. Show image & exif data. """
+        if not self._current_path:
+            return
+        index = self.lv_files.selectionModel().currentIndex()
+        if index >= 0:
+            item = self._lv_files_model.node_from_index(index)
+            if item:
+                self._show_image(os.path.join(self._current_path,
+                                              str(item.name)))
+                return
+        self._clear()
+
+    def _on_save_pressed(self):
+        """ Save changed metadata. """
+        if not self._current_image:
+            return
+        self.statusBar().showMessage('Saving...')
+        if self._current_image.save():
+            self._show_image(self._current_image.path)
+            self.statusBar().showMessage('Saved', 2000)
+        else:
+            self.statusBar().showMessage('Error...', 2000)
 
     def _on_te_description_tch(self):
         if self._current_image:
@@ -185,3 +192,14 @@ class MainWnd(QtGui.QMainWindow):
             self._update_tab_basic()
 #        elif idx == 1:
 #           self._update_tab_exif()
+
+#        pitem = QtGui.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(image))
+#        scene = QtGui.QGraphicsScene()
+#        scene.addItem(pitem)
+#        self.g_view.setScene(scene)
+#        self.g_view.fitInView(scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
+#        self.g_view.show()
+
+#        self.tv_dirs.selectionModel().select(
+#               model.index(QtCore.QDir.currentPath()),
+#               QtGui.QItemSelectionModel.ClearAndSelect)
