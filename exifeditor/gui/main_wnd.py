@@ -59,6 +59,7 @@ class MainWnd(QtGui.QMainWindow):
     def _bind(self):
         self.tv_dirs.clicked.connect(self._on_tv_dirs_activated)
         self.b_save.pressed.connect(self._on_save_pressed)
+        self.tabWidget.currentChanged.connect(self._on_tab_changed)
         # file list model
         sel_model = self.lv_files.selectionModel()
         sel_model.currentChanged.connect(self._on_lv_files_selection)
@@ -104,27 +105,42 @@ class MainWnd(QtGui.QMainWindow):
         self._current_image = None
         self.g_view.setPixmap(QtGui.QPixmap())
         self._tv_info_model.update(None)
+        self.te_description.setPlainText("")
+        self.te_comment.setPlainText("")
+        self.te_artist.setPlainText("")
+        self.te_copyright.setText("")
+        self.dt_datetime.setDateTime(QtCore.QDateTime.currentDateTime())
 
     def _show_image(self, path):
         self.tv_info.reset()
-        image = self._current_image = exif.Image(path)
+        self._current_image = exif.Image(path)
         thumb = QtGui.QImage(path)
         thumb = thumb.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
         self.g_view.setPixmap(QtGui.QPixmap.fromImage(thumb))
-        self._tv_info_model.update(self._current_image)
-        self.tv_info.expandAll()
-        self.tv_info.resizeColumnToContents(0)
-        self.tv_info.resizeColumnToContents(1)
+        self._update_tab_basic()
+        self._update_tab_exif()
+
+    def _update_tab_basic(self):
+        image = self._current_image
+        if not image:
+            return
         self.te_description.setPlainText(image.description)
         self.te_comment.setPlainText(image.comment)
         self.te_artist.setPlainText(image.artist)
         self.te_copyright.setText(image.copyright)
         try:
-            self.dt_datetime.setDateTime(QtCore.QDateTime.
-                                         fromString(image.datetime,
-                                                    'yyyy:MM:dd HH:mm:ss'))
+            dtime = QtCore.QDateTime.fromString(image.datetime,
+                                                'yyyy:MM:dd HH:mm:ss')
+            self.dt_datetime.setDateTime(dtime)
         except:
             pass
+
+    def _update_tab_exif(self):
+        self._tv_info_model.update(self._current_image)
+        self.tv_info.expandAll()
+        self.tv_info.resizeColumnToContents(0)
+        self.tv_info.resizeColumnToContents(1)
+
 #        pitem = QtGui.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(image))
 #        scene = QtGui.QGraphicsScene()
 #        scene.addItem(pitem)
@@ -155,3 +171,9 @@ class MainWnd(QtGui.QMainWindow):
         if self._current_image:
             self._current_image.datetime = \
                  str(value.toString('yyyy:MM:dd HH:mm:ss'))
+
+    def _on_tab_changed(self, idx):
+        if idx == 0:
+            self._update_tab_basic()
+#        elif idx == 1:
+#           self._update_tab_exif()
