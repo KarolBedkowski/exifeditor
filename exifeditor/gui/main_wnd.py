@@ -160,7 +160,6 @@ class MainWnd(QtGui.QMainWindow):
         if not self._current_path:
             return
         item = self._lv_files_model.fileInfo(index).absoluteFilePath()
-        print item
         if item:
             self._show_image(str(item))
             return
