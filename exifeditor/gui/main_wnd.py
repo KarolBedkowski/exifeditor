@@ -13,7 +13,6 @@ __version__ = "2014-11-11"
 
 import gettext
 import logging
-import os.path
 
 from PyQt4 import QtGui, uic, QtCore
 
@@ -39,24 +38,38 @@ class MainWnd(QtGui.QMainWindow):
         self._current_path = None
         self._current_image = None
 
+        current_dir = QtCore.QDir.currentPath()
+
         # setup dirs tree
-        self._tv_dirs_model = model = QtGui.QFileSystemModel()
+        self._tv_dirs_model = model = QtGui.QFileSystemModel(self)
         model.setRootPath(QtCore.QDir.rootPath())
         model.setFilter(QtCore.QDir.AllDirs | QtCore.QDir.NoDotAndDotDot)
         self.tv_dirs.setModel(model)
         self.tv_dirs.setRootIndex(model.index(QtCore.QDir.rootPath()))
-        self.tv_dirs.setCurrentIndex(model.index(QtCore.QDir.currentPath()))
+        self.tv_dirs.setCurrentIndex(model.index(current_dir))
         self.tv_dirs.setColumnWidth(0, 200)
 
         # setup files list
-        self._lv_files_model = model = _models.ImagesListModel()
+        model = self._lv_files_model = QtGui.QFileSystemModel(self)
+        self._create_file_list_model(current_dir)
         self.lv_files.setModel(model)
+        self.lv_files.setRootIndex(model.setRootPath(current_dir))
+        self.lv_files.setColumnWidth(0, 200)
 
         # exif list
         self._tv_info_model = _models.ExifTreeModel()
         self.tv_info.setModel(self._tv_info_model)
 
         self._bind()
+
+    def _create_file_list_model(self, path):
+        model = self._lv_files_model
+        model.reset()
+        model.setRootPath(path)
+        model.setFilter(QtCore.QDir.Files | QtCore.QDir.NoSymLinks |
+                        QtCore.QDir.NoDotAndDotDot)
+        model.setNameFilters(["*.jpg", "*.png", "*.tiff", "*.tif", "*.nef"])
+        model.setNameFilterDisables(False)
 
     def _bind(self):
         self.tv_dirs.clicked.connect(self._on_tv_dirs_activated)
@@ -132,24 +145,25 @@ class MainWnd(QtGui.QMainWindow):
 
     def _on_tv_dirs_activated(self, index):
         """ Select directory action. Show file list. """
-        node = self._tv_dirs_model.filePath(index)
+        node = self._tv_dirs_model.fileInfo(index).absoluteFilePath()
+        _LOG.debug("_on_tv_dirs_activated: %s", node)
+        if node == self._current_image:
+            return
         self._current_path = str(node)
-        self.lv_files.clearSelection()
-        self._lv_files_model.update(str(node))
-        self.lv_files.resizeColumnsToContents()
+        # force create new model due some caching problems
+        self._create_file_list_model(node)
+        self.lv_files.setRootIndex(self._lv_files_model.setRootPath(node))
         self._clear()
 
-    def _on_lv_files_selection(self, _index):
+    def _on_lv_files_selection(self, index):
         """ File select action. Show image & exif data. """
         if not self._current_path:
             return
-        index = self.lv_files.selectionModel().currentIndex()
-        if index >= 0:
-            item = self._lv_files_model.node_from_index(index)
-            if item:
-                self._show_image(os.path.join(self._current_path,
-                                              str(item.name)))
-                return
+        item = self._lv_files_model.fileInfo(index).absoluteFilePath()
+        print item
+        if item:
+            self._show_image(str(item))
+            return
         self._clear()
 
     def _on_save_pressed(self):
