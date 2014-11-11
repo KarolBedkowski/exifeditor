@@ -44,7 +44,11 @@ class MainWnd(QtGui.QMainWindow):
         model.setRootPath(QtCore.QDir.rootPath())
         model.setFilter(QtCore.QDir.AllDirs | QtCore.QDir.NoDotAndDotDot)
         self.tv_dirs.setModel(model)
-        self.tv_dirs.setRootIndex(model.index(QtCore.QDir.homePath()))
+        self.tv_dirs.setRootIndex(model.index(QtCore.QDir.rootPath()))
+        self.tv_dirs.setCurrentIndex(model.index(QtCore.QDir.currentPath()))
+#        self.tv_dirs.selectionModel().select(
+#               model.index(QtCore.QDir.currentPath()),
+#               QtGui.QItemSelectionModel.ClearAndSelect)
         self.tv_dirs.setColumnWidth(0, 200)
 
         # setup files list
@@ -114,6 +118,7 @@ class MainWnd(QtGui.QMainWindow):
         self.dt_datetime.setDateTime(QtCore.QDateTime.currentDateTime())
 
     def _show_image(self, path):
+        self.statusBar().showMessage('Loading...')
         self.tv_info.reset()
         self._current_image = exif.Image(path)
         thumb = QtGui.QImage(path)
@@ -121,6 +126,7 @@ class MainWnd(QtGui.QMainWindow):
         self.g_view.setPixmap(QtGui.QPixmap.fromImage(thumb))
         self._update_tab_basic()
         self._update_tab_exif()
+        self.statusBar().clearMessage()
 
     def _update_tab_basic(self):
         image = self._current_image
