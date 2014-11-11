@@ -103,7 +103,83 @@ class Image(object):
     def debug_tag(self, tag):
         print 'Tag:', tag, '\t\t\tLabel:', self.exif.get_tag_label(tag),
         print '\t\t\tType:', self.exif.get_tag_type(tag)
-        print 'Value:', repr(self.exif.get(tag)[:100])
+        print 'Value:', repr(self.exif.get(tag))[:100]
         print 'Interpreted:', repr(self.exif.\
-                                   get_tag_interpreted_string(tag)[:100])
+                                   get_tag_interpreted_string(tag))[:100]
         print '---------------------------------------------'
+
+    _description_tag = 'Exif.Image.ImageDescription'
+
+    def _get_description(self):
+        descr = self.exif.get(self._description_tag) or ''
+        return unicode(descr, 'utf-8')
+
+    def _set_description(self, value):
+        if value == self._get_description:
+            return
+        self.exif[self._description_tag] = value
+
+    description = property(_get_description, _set_description)
+
+    _comment_tag = 'Exif.Photo.UserComment'
+
+    def _get_comment(self):
+        # TODO; check
+        comment = self.exif.get(self._comment_tag) or ''
+        if comment.startswith('\x00\x00\x00\x00\x00\x00\x00\x00'):  # undefined
+            comment = comment[8:]
+        elif comment.startswith('Unicode'):
+            comment = comment[7:].lstrip('\x00')
+            comment = unicode(comment, 'utf-8')
+        elif comment.startswith('ASCII'):
+            comment = comment[5:].lstrip('\x00')
+        return comment
+
+    def _set_comment(self, value):
+        if value == self._get_comment():
+            return
+        try:
+            strvalue = str(value)
+            self.exif[self._comment_tag] = 'ASCII ' + strvalue
+        except UnicodeError:
+            self.exif[self._comment_tag] = 'Unicode ' + value
+
+    comment = property(_get_comment, _set_comment)
+
+    _artist_tag = 'Exif.Image.Artist'
+
+    def _get_artist(self):
+        artist = self.exif.get(self._artist_tag) or ''
+        artist = unicode(artist, 'utf-8')
+        artist = artist.replace('\x00', '\n')
+        return artist
+
+    def _set_artist(self, value):
+        if self._get_artist() != value:
+            self.exif[self._artist_tag] = value
+
+    artist = property(_get_artist, _set_artist)
+
+    _copyright_tag = 'Exif.Image.Copyright'
+
+    def _get_copyright(self):
+        copyr = self.exif.get(self._copyright_tag) or ''
+        return unicode(copyr, 'utf-8')
+
+    def _set_copyright(self, value):
+        if value != self._get_copyright():
+            self.exif[self._copyright_tag] = value
+
+    copyright = property(_get_copyright, _set_copyright)
+
+    _datetime_tag = 'Exif.Image.DateTime'
+
+    def _get_datetime(self):
+        dtime = self.exif.get(self._datetime_tag) or ''
+        return dtime
+
+    def _set_datetime(self, value):
+        if value != self._get_datetime():
+            self.exif[self._datetime_tag] = value
+
+    datetime = property(_get_datetime, _set_datetime)

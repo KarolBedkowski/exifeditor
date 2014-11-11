@@ -201,8 +201,10 @@ class ExifTreeModel(QtCore.QAbstractItemModel):
             pass
         elif role == QtCore.Qt.DisplayRole:
             node = self.node_from_index(index)
-            return QtCore.QVariant((node.value if index.column() == 1
-                                    else node.label) or "")
+            value = (node.value if index.column() == 1 else node.label) or ""
+            if len(value) > 100:
+                value = value[:100] + '[...]'
+            return QtCore.QVariant(value)
         elif role == QtCore.Qt.EditRole:
             if index.column() == 1:
                 node = self.node_from_index(index)

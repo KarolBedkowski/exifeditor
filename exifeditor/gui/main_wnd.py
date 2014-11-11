@@ -63,13 +63,19 @@ class MainWnd(QtGui.QMainWindow):
         sel_model = self.lv_files.selectionModel()
         sel_model.currentChanged.connect(self._on_lv_files_selection)
 #        sel_model.selectionChanged.connect(self._on_lv_files_selection)
+        # text fields
+        self.te_description.textChanged.connect(self._on_te_description_tch)
+        self.te_comment.textChanged.connect(self._on_te_comment_tch)
+        self.te_artist.textChanged.connect(self._on_te_artist_tch)
+        self.te_copyright.textEdited.connect(self._on_te_copyright_tch)
+        self.dt_datetime.dateTimeChanged.connect(self._on_te_datetime_ch)
 
     def _on_tv_dirs_activated(self, index):
         node = self._tv_dirs_model.filePath(index)
         self._current_path = str(node)
         self.lv_files.clearSelection()
         self._lv_files_model.update(str(node))
-        self._show_image(None)
+        self._clear()
 
     def _on_lv_files_selection(self, _index):
         if not self._current_path:
@@ -81,7 +87,7 @@ class MainWnd(QtGui.QMainWindow):
                 self._show_image(os.path.join(self._current_path,
                                               str(item.name)))
                 return
-        self._show_image(None)
+        self._clear()
 
     def _on_save_pressed(self):
         if not self._current_image:
@@ -93,24 +99,59 @@ class MainWnd(QtGui.QMainWindow):
         else:
             self.statusBar().showMessage('Error...', 2000)
 
+    def _clear(self):
+        self.tv_info.reset()
+        self._current_image = None
+        self.g_view.setPixmap(QtGui.QPixmap())
+        self._tv_info_model.update(None)
+
     def _show_image(self, path):
         self.tv_info.reset()
-        if path:
-            self._current_image = exif.Image(path)
-            image = QtGui.QImage(path)
-            image = image.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
-            self.g_view.setPixmap(QtGui.QPixmap.fromImage(image))
-            self._tv_info_model.update(self._current_image)
-            self.tv_info.expandAll()
-            self.tv_info.resizeColumnToContents(0)
-            self.tv_info.resizeColumnToContents(1)
-        else:
-            self._current_image = None
-            self.g_view.setPixmap(QtGui.QPixmap())
-            self._tv_info_model.update(None)
+        image = self._current_image = exif.Image(path)
+        thumb = QtGui.QImage(path)
+        thumb = thumb.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
+        self.g_view.setPixmap(QtGui.QPixmap.fromImage(thumb))
+        self._tv_info_model.update(self._current_image)
+        self.tv_info.expandAll()
+        self.tv_info.resizeColumnToContents(0)
+        self.tv_info.resizeColumnToContents(1)
+        self.te_description.setPlainText(image.description)
+        self.te_comment.setPlainText(image.comment)
+        self.te_artist.setPlainText(image.artist)
+        self.te_copyright.setText(image.copyright)
+        try:
+            self.dt_datetime.setDateTime(QtCore.QDateTime.
+                                         fromString(image.datetime,
+                                                    'yyyy:MM:dd HH:mm:ss'))
+        except:
+            pass
 #        pitem = QtGui.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(image))
 #        scene = QtGui.QGraphicsScene()
 #        scene.addItem(pitem)
 #        self.g_view.setScene(scene)
 #        self.g_view.fitInView(scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
 #        self.g_view.show()
+
+    def _on_te_description_tch(self):
+        if self._current_image:
+            self._current_image.description = \
+                    unicode(self.te_description.toPlainText())
+
+    def _on_te_comment_tch(self):
+        if self._current_image:
+            self._current_image.comment = \
+                    unicode(self.te_comment.toPlainText())
+
+    def _on_te_artist_tch(self):
+        if self._current_image:
+            self._current_image.artist = \
+                    unicode(self.te_artist.toPlainText())
+
+    def _on_te_copyright_tch(self, value):
+        if self._current_image:
+            self._current_image.copyright = unicode(value)
+
+    def _on_te_datetime_ch(self, value):
+        if self._current_image:
+            self._current_image.datetime = \
+                 str(value.toString('yyyy:MM:dd HH:mm:ss'))
