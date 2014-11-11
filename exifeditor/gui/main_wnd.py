@@ -45,6 +45,7 @@ class MainWnd(QtGui.QMainWindow):
         model.setFilter(QtCore.QDir.AllDirs | QtCore.QDir.NoDotAndDotDot)
         self.tv_dirs.setModel(model)
         self.tv_dirs.setRootIndex(model.index(QtCore.QDir.homePath()))
+        self.tv_dirs.setColumnWidth(0, 200)
 
         # setup files list
         self._lv_files_model = model = _models.ImagesListModel()
@@ -76,6 +77,7 @@ class MainWnd(QtGui.QMainWindow):
         self._current_path = str(node)
         self.lv_files.clearSelection()
         self._lv_files_model.update(str(node))
+        self.lv_files.resizeColumnsToContents()
         self._clear()
 
     def _on_lv_files_selection(self, _index):
