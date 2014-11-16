@@ -78,6 +78,7 @@ class MainWnd(QtGui.QMainWindow):
         self.tv_dirs.clicked.connect(self._on_tv_dirs_activated)
         self.b_save.pressed.connect(self._on_save_pressed)
         self.tabWidget.currentChanged.connect(self._on_tab_changed)
+        self.a_about.activated.connect(self._on_about)
         # file list model
         sel_model = self.lv_files.selectionModel()
         sel_model.currentChanged.connect(self._on_lv_files_selection)
@@ -208,6 +209,13 @@ class MainWnd(QtGui.QMainWindow):
             self._update_tab_basic()
 #        elif idx == 1:
 #           self._update_tab_exif()
+
+    def _on_about(self):
+        from exifeditor import version
+        QtGui.QMessageBox.about(self, version.NAME, version.INFO)
+
+
+#  backup
 
 #        pitem = QtGui.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(image))
 #        scene = QtGui.QGraphicsScene()
