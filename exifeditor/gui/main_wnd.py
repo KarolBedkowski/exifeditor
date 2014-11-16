@@ -58,7 +58,10 @@ class MainWnd(QtGui.QMainWindow):
 
         # exif list
         self._tv_info_model = _models.ExifTreeModel()
-        self.tv_info.setModel(self._tv_info_model)
+        model = QtGui.QSortFilterProxyModel()
+        model.setSourceModel(self._tv_info_model)
+        model.setDynamicSortFilter(True)
+        self.tv_info.setModel(model)
 
         self._bind()
 
