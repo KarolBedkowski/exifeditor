@@ -45,8 +45,15 @@ class Image(object):
         return True
 
     def get_value(self, tag):
-        """ Get value for given tag """
+        """ Get value for given tag.
+        Args:
+            tag: tag name
+        Returns:
+            (raw value, interpreted value)
+        """
         val = self.exif.get(tag)
+        if val is None:
+            return None
         # val = val.replace('\0', '').replace('\n', '; ').strip()
         val = val.decode('utf-8', errors='replace')
         tag_type = self.exif.get_tag_type(tag)
@@ -70,10 +77,17 @@ class Image(object):
 
             TODO: better way to detect changes
         """
-        old_value = self.exif[tag]
+        old_value = self.exif.get(tag)
         self.exif[tag] = value
-        new_value = self.exif[tag]
+        new_value = self.exif[tag]  # because of interpretation
         self.updated |= old_value != new_value
+        return self.updated
+
+    def del_value(self, tag):
+        """ Delete tag from exif. """
+        if tag in self.exif:
+            del self.exif[tag]
+            self.updated = True
         return self.updated
 
     def get_tags_by_group(self, group):
@@ -124,25 +138,25 @@ class Image(object):
                    "; ".join(key + ": " + repr(val)
                              for key, val in self.debug_tag(tag).iteritems()))
 
-    _description_tag = 'Exif.Image.ImageDescription'
+    DESCRIPTION_TAG = 'Exif.Image.ImageDescription'
 
     def _get_description(self):
-        descr = self.exif.get(self._description_tag) or ''
+        descr = self.exif.get(self.DESCRIPTION_TAG) or ''
         return unicode(descr, 'utf-8')
 
     def _set_description(self, value):
         if value == self._get_description:
             return
-        self.exif[self._description_tag] = value
+        self.exif[self.DESCRIPTION_TAG] = value
 
     """  Exif.Image.ImageDescription property """
     description = property(_get_description, _set_description)
 
-    _comment_tag = 'Exif.Photo.UserComment'
+    COMMENT_TAG = 'Exif.Photo.UserComment'
 
     def _get_comment(self):
         # TODO; check
-        comment = self.exif.get(self._comment_tag) or ''
+        comment = self.exif.get(self.COMMENT_TAG) or ''
         if comment.startswith('\x00\x00\x00\x00\x00\x00\x00\x00'):  # undefined
             comment = comment[8:]
         elif comment.startswith('Unicode'):
@@ -159,53 +173,53 @@ class Image(object):
             return
         try:
             strvalue = str(value)
-            self.exif[self._comment_tag] = 'ASCII ' + strvalue
+            self.exif[self.COMMENT_TAG] = 'ASCII ' + strvalue
         except UnicodeError:
-            self.exif[self._comment_tag] = 'Unicode ' + value
+            self.exif[self.COMMENT_TAG] = 'Unicode ' + value
         self.updated = True
 
     """  Exif.Photo.UserComment property """
     comment = property(_get_comment, _set_comment)
 
-    _artist_tag = 'Exif.Image.Artist'
+    ARTIST_TAG = 'Exif.Image.Artist'
 
     def _get_artist(self):
-        artist = self.exif.get(self._artist_tag) or ''
+        artist = self.exif.get(self.ARTIST_TAG) or ''
         artist = unicode(artist, 'utf-8')
         artist = artist.replace('\x00', '\n')
         return artist
 
     def _set_artist(self, value):
         if self._get_artist() != value:
-            self.exif[self._artist_tag] = value
+            self.exif[self.ARTIST_TAG] = value
             self.updated = True
 
     """  Exif.Image.Artist property. """
     artist = property(_get_artist, _set_artist)
 
-    _copyright_tag = 'Exif.Image.Copyright'
+    COPYRIGHT_TAG = 'Exif.Image.Copyright'
 
     def _get_copyright(self):
-        copyr = self.exif.get(self._copyright_tag) or ''
+        copyr = self.exif.get(self.COPYRIGHT_TAG) or ''
         return unicode(copyr, 'utf-8')
 
     def _set_copyright(self, value):
         if value != self._get_copyright():
-            self.exif[self._copyright_tag] = value
+            self.exif[self.COPYRIGHT_TAG] = value
             self.updated = True
 
     """  Exif.Image.Copyright property. """
     copyright = property(_get_copyright, _set_copyright)
 
-    _datetime_tag = 'Exif.Image.DateTime'
+    DATETIME_TAG = 'Exif.Image.DateTime'
 
     def _get_datetime(self):
-        dtime = self.exif.get(self._datetime_tag) or ''
+        dtime = self.exif.get(self.DATETIME_TAG) or ''
         return dtime
 
     def _set_datetime(self, value):
         if value != self._get_datetime():
-            self.exif[self._datetime_tag] = value
+            self.exif[self.DATETIME_TAG] = value
             self.updated = True
 
     """  Exif.Image.DateTime property. """

@@ -48,7 +48,10 @@ class FileList(object):
             dst_exif = self.get_exif(filename)
             for tag in tags:
                 value = src_exif.get_value(tag)
-                dst_exif.set_value(tag, value)
+                if value is not None:
+                    dst_exif.set_value(tag, value[0])
+                else:
+                    dst_exif.del_value(tag)
 
     def save(self):
         for fexif in self._exif.itervalues():
