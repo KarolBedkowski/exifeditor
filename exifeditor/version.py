@@ -9,7 +9,7 @@ Licence: GPLv2+
 
 __author__ = "Karol Będkowski"
 __copyright__ = "Copyright (c) Karol Będkowski, 2014"
-__version__ = "2014-11-09"
+__version__ = "2014-12-26"
 
 import gettext
 
@@ -17,9 +17,9 @@ _ = gettext.gettext
 
 SHORTNAME = "exifeditor"
 NAME = _("exifeditor")
-VERSION = "0.0.1"
-VERSION_INFO = (0, 0, 1, "alpha", 1)
-RELEASE = "2014-11-11"
+VERSION = "0.0.2"
+VERSION_INFO = (0, 0, 2, "alpha", 1)
+RELEASE = "2014-12-26"
 DESCRIPTION = _("""exifeditor""")
 DEVELOPERS = u"""Karol Będkowski"""
 TRANSLATORS = u"""Karol Będkowski"""
