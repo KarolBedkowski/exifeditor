@@ -9,7 +9,7 @@ Licence: GPLv2+
 
 __author__ = u"Karol Będkowski"
 __copyright__ = u"Copyright (c) Karol Będkowski, 2014"
-__version__ = "2014-11-09"
+__version__ = "2014-12-26"
 
 
 import logging
@@ -30,6 +30,8 @@ class FileList(object):
 
     def reset(self):
         self._exif = {}  # filename -> exif object
+        # cache for images
+        self._images = {}  # filename -> pixmap
 
     def get_exif(self, filename):
         fexif = self._exif.get(filename)
@@ -57,3 +59,11 @@ class FileList(object):
         for fexif in self._exif.itervalues():
             if fexif.updated:
                 fexif.save()
+
+    def get_pixmap(self, filename):
+        """ Get pixmap for `filename` from cache. """
+        return self._images.get(filename)
+
+    def set_pixmap(self, filename, pixmap):
+        """ Put pixmap for `filename` in cache. """
+        self._images[filename] = pixmap
