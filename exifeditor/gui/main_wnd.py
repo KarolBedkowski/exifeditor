@@ -149,16 +149,25 @@ class MainWnd(QtGui.QMainWindow):
         self.te_copyright.setEnabled(True)
         self.dt_datetime.setEnabled(True)
         image = self._current_image
-        self.te_description.setPlainText(image.description)
-        self.te_comment.setPlainText(image.comment)
-        self.te_artist.setPlainText(image.artist)
+
+        def set_value(obj, value):
+            obj.blockSignals(True)
+            obj.setPlainText(value)
+            obj.blockSignals(False)
+
+        set_value(self.te_description, image.description)
+        set_value(self.te_comment, image.comment)
+        set_value(self.te_artist, image.artist)
+        self.te_copyright.blockSignals(True)
         self.te_copyright.setText(image.copyright)
+        self.te_copyright.blockSignals(False)
         try:
             dtime = QtCore.QDateTime.fromString(image.datetime,
                                                 'yyyy:MM:dd HH:mm:ss')
+            self.dt_datetime.blockSignals(True)
             self.dt_datetime.setDateTime(dtime)
-        except:
-            pass
+        finally:
+            self.dt_datetime.blockSignals(False)
 
     def _update_tab_exif(self):
         """ Show detailed exif data. """
