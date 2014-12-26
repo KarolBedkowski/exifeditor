@@ -27,6 +27,13 @@ _EXIF_GROUP_SORTING = {
 }
 
 
+class ExifUpdateError(Exception):
+    pass
+
+class ExifSaveError(Exception):
+    pass
+
+
 class Image(object):
     """Image file representation. """
     def __init__(self, path):
@@ -39,9 +46,15 @@ class Image(object):
     def save(self):
         """ Save changes """
         _LOG.info("Image.save %s", self.path)
-        res = self.exif.save_file()
-        _LOG.info("Image.save done: res=%r", res)
-        self.updated = False
+        try:
+            res = self.exif.save_file()
+            _LOG.info("Image.save done: res=%r", res)
+        except Exception, err:
+            _LOG.exception("Exif.save(%s) error", self.path)
+            raise ExifSaveError(err)
+            return False
+        else:
+            self.updated = False
         return True
 
     def get_value(self, tag):
@@ -77,8 +90,11 @@ class Image(object):
 
             TODO: better way to detect changes
         """
+        # _LOG.debug("Exif.set_value(%s, %s, %r)", self.path, tag, value)
         old_value = self.exif.get(tag)
         self.exif[tag] = value
+        if tag not in self.exif:
+            raise ExifUpdateError("Error updating tag %s" % tag)
         new_value = self.exif[tag]  # because of interpretation
         self.updated |= old_value != new_value
         return self.updated
@@ -145,9 +161,7 @@ class Image(object):
         return unicode(descr, 'utf-8')
 
     def _set_description(self, value):
-        if value == self._get_description:
-            return
-        self.exif[self.DESCRIPTION_TAG] = value
+        return self.set_value(self.DESCRIPTION_TAG, value)
 
     """  Exif.Image.ImageDescription property """
     description = property(_get_description, _set_description)

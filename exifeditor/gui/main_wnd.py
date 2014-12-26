@@ -286,10 +286,14 @@ class MainWnd(QtGui.QMainWindow):
     def _save(self):
         """ Save changes. """
         self.statusBar().showMessage('Saving...')
-        try:
-            self._filelist.save()
-        except Exception, err:
-            self.statusBar().showMessage('Error: %s' % err, 2000)
+        errors = self._filelist.save()
+        if errors:
+            msg = "<p><b>Errors: <b></p>" + \
+                    ''.join('<p>%s</p>' % err for err in errors.itervalues())
+            QtGui.QMessageBox.critical(self, "Saving files error!", msg,
+                                       QtGui.QMessageBox.Ok)
+            self.statusBar().showMessage('Error during saving %d files' %
+                                         len(errors), 2000)
         else:
             self.statusBar().showMessage('Saved', 2000)
         self._show_image(self._current_image.path)

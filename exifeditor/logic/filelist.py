@@ -56,9 +56,14 @@ class FileList(object):
                     dst_exif.del_value(tag)
 
     def save(self):
+        errors = {}
         for fexif in self._exif.itervalues():
             if fexif.updated:
-                fexif.save()
+                try:
+                    fexif.save()
+                except exif.ExifSaveError, err:
+                    errors[fexif.path] = str(err)
+        return errors
 
     def get_pixmap(self, filename):
         """ Get pixmap for `filename` from cache. """
