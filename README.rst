@@ -8,7 +8,7 @@
 :Tags: exif, photo
 
 
-Simple exif editor.
+Simple exif editor - GUI for gexiv2.
 
 
 Disclaimer
@@ -32,6 +32,7 @@ Runtime Requirements
 * PyQT 4
 * gexiv2 https://wiki.gnome.org/Projects/gexiv2
 
+
 Licence
 =======
 
@@ -42,8 +43,11 @@ the Free Software Foundation, either version 2 of the License, or
 
 For details please see COPYING file.
 
+
 Credits
 =======
+
+App icon contains icons from Tango Project.
 
 
 .. vim: ft=rst tw=72
