@@ -68,6 +68,14 @@ class MainWnd(QtGui.QMainWindow):
 
         self._bind()
 
+        # scroll to current dir
+        def _scroll():
+            idx = self._tv_dirs_model.index(current_dir)
+            self.tv_dirs.scrollTo(idx, QtGui.QAbstractItemView.PositionAtTop)
+            self.tv_dirs.expand(idx)
+
+        QtCore.QTimer.singleShot(100, _scroll)
+
     def _create_file_list_model(self, path):
         model = self._lv_files_model
         model.reset()
