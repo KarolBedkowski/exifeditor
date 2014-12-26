@@ -159,8 +159,17 @@ class MainWnd(QtGui.QMainWindow):
         """ Select directory action. Show file list. """
         node = self._tv_dirs_model.fileInfo(index).absoluteFilePath()
         _LOG.debug("_on_tv_dirs_activated: %s", node)
-        if node == self._current_image:
+        if node == self._current_path:
             return
+        num_updated = self._filelist.updated
+        if num_updated:
+            reply = QtGui.QMessageBox.question(self, "Save changes",
+                                               "Save changes in %d files?" %
+                                               num_updated,
+                                               QtGui.QMessageBox.Yes |
+                                               QtGui.QMessageBox.No)
+            if reply == QtGui.QMessageBox.Yes:
+                self._save()
         self._current_path = unicode(node)
         self._filelist.reset()
         # force create new model due some caching problems
@@ -188,16 +197,8 @@ class MainWnd(QtGui.QMainWindow):
                                            num_updated,
                                            QtGui.QMessageBox.Yes |
                                            QtGui.QMessageBox.No)
-        if reply != QtGui.QMessageBox.Yes:
-            return
-        self.statusBar().showMessage('Saving...')
-        try:
-            self._filelist.save()
-        except Exception, err:
-            self.statusBar().showMessage('Error: %s' % err, 2000)
-        else:
-            self.statusBar().showMessage('Saved', 2000)
-        self._show_image(self._current_image.path)
+        if reply == QtGui.QMessageBox.Yes:
+            self._save()
 
     def _on_te_description_tch(self):
         if self._current_image:
@@ -260,6 +261,17 @@ class MainWnd(QtGui.QMainWindow):
         self._filelist.copy_exif_tag(src_filename, dst_files, (tag, ))
         for idx in selected:
             self._lv_files_model.dataChanged.emit(idx, idx)
+
+    def _save(self):
+        """ Save changes. """
+        self.statusBar().showMessage('Saving...')
+        try:
+            self._filelist.save()
+        except Exception, err:
+            self.statusBar().showMessage('Error: %s' % err, 2000)
+        else:
+            self.statusBar().showMessage('Saved', 2000)
+        self._show_image(self._current_image.path)
 
 
 #  backup
