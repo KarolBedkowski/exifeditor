@@ -387,6 +387,9 @@
     </property>
     <addaction name="a_save"/>
     <addaction name="separator"/>
+    <addaction name="a_prev_file"/>
+    <addaction name="a_next_file"/>
+    <addaction name="separator"/>
     <addaction name="a_quit"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -433,6 +436,22 @@
    </property>
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="a_prev_file">
+   <property name="text">
+    <string>Previous file</string>
+   </property>
+   <property name="shortcut">
+    <string>PgUp</string>
+   </property>
+  </action>
+  <action name="a_next_file">
+   <property name="text">
+    <string>Next file</string>
+   </property>
+   <property name="shortcut">
+    <string>PgDown</string>
    </property>
   </action>
  </widget>

@@ -90,6 +90,8 @@ class MainWnd(QtGui.QMainWindow):
         self.b_save.pressed.connect(self._on_save_pressed)
         self.tabWidget.currentChanged.connect(self._on_tab_changed)
         self.a_about.activated.connect(self._on_about)
+        self.a_prev_file.activated.connect(self._on_prev_file)
+        self.a_next_file.activated.connect(self._on_next_file)
         # file list model
         sel_model = self.lv_files.selectionModel()
         sel_model.currentChanged.connect(self._on_lv_files_selection)
@@ -269,6 +271,20 @@ class MainWnd(QtGui.QMainWindow):
 
     def _on_btn_copyright(self):
         self._copy_to_selected(exif.Image.COPYRIGHT_TAG)
+
+    def _on_prev_file(self):
+        sel_model = self.lv_files.selectionModel()
+        selected = sel_model.selectedRows()
+        if selected:
+            row = selected[0].row()
+            self.lv_files.selectRow(row - 1)
+
+    def _on_next_file(self):
+        sel_model = self.lv_files.selectionModel()
+        selected = sel_model.selectedRows()
+        if selected:
+            row = selected[0].row()
+            self.lv_files.selectRow(row + 1)
 
     def _copy_to_selected(self, tag):
         sel_model = self.lv_files.selectionModel()
