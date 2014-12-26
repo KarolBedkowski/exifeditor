@@ -19,7 +19,7 @@ from PyQt4 import QtGui, uic, QtCore
 from exifeditor.gui import _models
 from exifeditor.gui import _resources_rc
 from exifeditor.lib.appconfig import AppConfig
-from exifeditor.logic import exif
+from exifeditor.logic import filelist
 
 _ = gettext.gettext
 _LOG = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ class MainWnd(QtGui.QMainWindow):
         self._current_image = None
 
         current_dir = QtCore.QDir.currentPath()
+        self._filelist = filelist.FileList()
 
         # setup dirs tree
         self._tv_dirs_model = model = QtGui.QFileSystemModel(self)
@@ -50,7 +51,9 @@ class MainWnd(QtGui.QMainWindow):
         self.tv_dirs.setColumnWidth(0, 200)
 
         # setup files list
-        model = self._lv_files_model = QtGui.QFileSystemModel(self)
+        model = self._lv_files_model = _models.MyFileSystemModel(self._filelist,
+                                                                 self)
+        # QtGui.QFileSystemModel(self)
         self._create_file_list_model(current_dir)
         self.lv_files.setModel(model)
         self.lv_files.setRootIndex(model.setRootPath(current_dir))
@@ -112,7 +115,7 @@ class MainWnd(QtGui.QMainWindow):
         """ load image from `path` and display exif informations. """
         self.statusBar().showMessage('Loading...')
         self.tv_info.reset()
-        self._current_image = exif.Image(path)
+        self._current_image = self._filelist.get_exif(path) # exif.Image(path)
         thumb = QtGui.QImage(path)
         thumb = thumb.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
         self.g_view.setPixmap(QtGui.QPixmap.fromImage(thumb))
@@ -171,14 +174,23 @@ class MainWnd(QtGui.QMainWindow):
 
     def _on_save_pressed(self):
         """ Save changed metadata. """
-        if not self._current_image:
+        num_updated = self._filelist.updated
+        if not num_updated:
+            return
+        reply = QtGui.QMessageBox.question(self, "Save changes",
+                                           "Save changes in %d files?" %
+                                           num_updated,
+                                           QtGui.QMessageBox.Yes |
+                                           QtGui.QMessageBox.No)
+        if reply != QtGui.QMessageBox.Yes:
             return
         self.statusBar().showMessage('Saving...')
-        if self._current_image.save():
-            self._show_image(self._current_image.path)
-            self.statusBar().showMessage('Saved', 2000)
-        else:
-            self.statusBar().showMessage('Error...', 2000)
+ #       if self._current_image.save():
+        self._filelist.save()
+        self._show_image(self._current_image.path)
+        self.statusBar().showMessage('Saved', 2000)
+#        else:
+#            self.statusBar().showMessage('Error...', 2000)
 
     def _on_te_description_tch(self):
         if self._current_image:

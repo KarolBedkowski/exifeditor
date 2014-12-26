@@ -34,12 +34,14 @@ class Image(object):
         self.exif = GExiv2.Metadata(path)
         self.groups = None
         self._create_groups()
+        self.updated = False
 
     def save(self):
         """ Save changes """
         _LOG.info("Image.save %s", self.path)
         res = self.exif.save_file()
         _LOG.info("Image.save done: res=%r", res)
+        self.updated = False
         return True
 
     def get_value(self, tag):
@@ -71,7 +73,8 @@ class Image(object):
         old_value = self.exif[tag]
         self.exif[tag] = value
         new_value = self.exif[tag]
-        return old_value != new_value
+        self.updated |= old_value != new_value
+        return self.updated
 
     def get_tags_by_group(self, group):
         """ Get tags in given `group` """
@@ -159,6 +162,7 @@ class Image(object):
             self.exif[self._comment_tag] = 'ASCII ' + strvalue
         except UnicodeError:
             self.exif[self._comment_tag] = 'Unicode ' + value
+        self.updated = True
 
     """  Exif.Photo.UserComment property """
     comment = property(_get_comment, _set_comment)
@@ -174,6 +178,7 @@ class Image(object):
     def _set_artist(self, value):
         if self._get_artist() != value:
             self.exif[self._artist_tag] = value
+            self.updated = True
 
     """  Exif.Image.Artist property. """
     artist = property(_get_artist, _set_artist)
@@ -187,6 +192,7 @@ class Image(object):
     def _set_copyright(self, value):
         if value != self._get_copyright():
             self.exif[self._copyright_tag] = value
+            self.updated = True
 
     """  Exif.Image.Copyright property. """
     copyright = property(_get_copyright, _set_copyright)
@@ -200,6 +206,7 @@ class Image(object):
     def _set_datetime(self, value):
         if value != self._get_datetime():
             self.exif[self._datetime_tag] = value
+            self.updated = True
 
     """  Exif.Image.DateTime property. """
     datetime = property(_get_datetime, _set_datetime)
