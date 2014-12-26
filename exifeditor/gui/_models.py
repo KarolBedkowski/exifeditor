@@ -13,8 +13,6 @@ __version__ = "2014-11-11"
 
 
 import logging
-import os.path
-import time
 import textwrap
 
 from PyQt4 import QtCore, QtGui
@@ -41,7 +39,7 @@ class ExifTreeNode(object):
 
     def __repr__(self):
         return "<%s %s; %r; clen=%d>" % (self.__class__.__name__,
-                                self.key, self.label, len(self))
+                                         self.key, self.label, len(self))
 
     def get_tooltip(self):
         return self.tooltip
@@ -218,3 +216,19 @@ class ExifTreeModel(QtCore.QAbstractItemModel):
             self.dataChanged.emit(index, index)
 
         return result
+
+
+class MyFileSystemModel(QtGui.QFileSystemModel):
+    def __init__(self, filelist, *argv, **kwargs):
+        self._filelist = filelist
+        super(MyFileSystemModel, self).__init__(*argv, **kwargs)
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.FontRole and index.isValid():
+            # bold names for changed files
+            fname = unicode(self.filePath(index))
+            if self._filelist.is_updated(fname):
+                font = QtGui.QFont()
+                font.setBold(True)
+                return font
+        return super(MyFileSystemModel, self).data(index, role)

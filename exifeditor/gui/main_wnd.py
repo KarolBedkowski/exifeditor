@@ -19,7 +19,7 @@ from PyQt4 import QtGui, uic, QtCore
 from exifeditor.gui import _models
 from exifeditor.gui import _resources_rc
 from exifeditor.lib.appconfig import AppConfig
-from exifeditor.logic import exif
+from exifeditor.logic import exif, filelist
 
 _ = gettext.gettext
 _LOG = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ class MainWnd(QtGui.QMainWindow):
         self._current_image = None
 
         current_dir = QtCore.QDir.currentPath()
+        self._filelist = filelist.FileList()
 
         # setup dirs tree
         self._tv_dirs_model = model = QtGui.QFileSystemModel(self)
@@ -50,7 +51,9 @@ class MainWnd(QtGui.QMainWindow):
         self.tv_dirs.setColumnWidth(0, 200)
 
         # setup files list
-        model = self._lv_files_model = QtGui.QFileSystemModel(self)
+        model = self._lv_files_model = \
+                _models.MyFileSystemModel(self._filelist, self)
+        # QtGui.QFileSystemModel(self)
         self._create_file_list_model(current_dir)
         self.lv_files.setModel(model)
         self.lv_files.setRootIndex(model.setRootPath(current_dir))
@@ -64,6 +67,14 @@ class MainWnd(QtGui.QMainWindow):
         self.tv_info.setModel(model)
 
         self._bind()
+
+        # scroll to current dir
+        def _scroll():
+            idx = self._tv_dirs_model.index(current_dir)
+            self.tv_dirs.scrollTo(idx, QtGui.QAbstractItemView.PositionAtTop)
+            self.tv_dirs.expand(idx)
+
+        QtCore.QTimer.singleShot(100, _scroll)
 
     def _create_file_list_model(self, path):
         model = self._lv_files_model
@@ -89,6 +100,11 @@ class MainWnd(QtGui.QMainWindow):
         self.te_artist.textChanged.connect(self._on_te_artist_tch)
         self.te_copyright.textEdited.connect(self._on_te_copyright_tch)
         self.dt_datetime.dateTimeChanged.connect(self._on_te_datetime_ch)
+        self.btn_description.pressed.connect(self._on_btn_description)
+        self.btn_comment.pressed.connect(self._on_btn_comment)
+        self.btn_artist.pressed.connect(self._on_btn_artist)
+        self.btn_datetime.pressed.connect(self._on_btn_datetime)
+        self.btn_copyright.pressed.connect(self._on_btn_copyright)
 
     def _clear(self):
         """ Clear all displayed information. """
@@ -112,10 +128,14 @@ class MainWnd(QtGui.QMainWindow):
         """ load image from `path` and display exif informations. """
         self.statusBar().showMessage('Loading...')
         self.tv_info.reset()
-        self._current_image = exif.Image(path)
-        thumb = QtGui.QImage(path)
-        thumb = thumb.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
-        self.g_view.setPixmap(QtGui.QPixmap.fromImage(thumb))
+        self._current_image = self._filelist.get_exif(path)  # exif.Image(path)
+        pixmap = self._filelist.get_pixmap(path)
+        if pixmap is None:
+            thumb = QtGui.QImage(path)
+            thumb = thumb.scaled(self.g_view.size(), QtCore.Qt.KeepAspectRatio)
+            pixmap = QtGui.QPixmap.fromImage(thumb)
+            self._filelist.set_pixmap(path, pixmap)
+        self.g_view.setPixmap(pixmap)
         self._update_tab_basic()
         self._update_tab_exif()
         self.statusBar().clearMessage()
@@ -151,9 +171,19 @@ class MainWnd(QtGui.QMainWindow):
         """ Select directory action. Show file list. """
         node = self._tv_dirs_model.fileInfo(index).absoluteFilePath()
         _LOG.debug("_on_tv_dirs_activated: %s", node)
-        if node == self._current_image:
+        if node == self._current_path:
             return
-        self._current_path = str(node)
+        num_updated = self._filelist.updated
+        if num_updated:
+            reply = QtGui.QMessageBox.question(self, "Save changes",
+                                               "Save changes in %d files?" %
+                                               num_updated,
+                                               QtGui.QMessageBox.Yes |
+                                               QtGui.QMessageBox.No)
+            if reply == QtGui.QMessageBox.Yes:
+                self._save()
+        self._current_path = unicode(node)
+        self._filelist.reset()
         # force create new model due some caching problems
         self._create_file_list_model(node)
         self.lv_files.setRootIndex(self._lv_files_model.setRootPath(node))
@@ -165,20 +195,22 @@ class MainWnd(QtGui.QMainWindow):
             return
         item = self._lv_files_model.fileInfo(index).absoluteFilePath()
         if item:
-            self._show_image(str(item))
+            self._show_image(unicode(item))
             return
         self._clear()
 
     def _on_save_pressed(self):
         """ Save changed metadata. """
-        if not self._current_image:
+        num_updated = self._filelist.updated
+        if not num_updated:
             return
-        self.statusBar().showMessage('Saving...')
-        if self._current_image.save():
-            self._show_image(self._current_image.path)
-            self.statusBar().showMessage('Saved', 2000)
-        else:
-            self.statusBar().showMessage('Error...', 2000)
+        reply = QtGui.QMessageBox.question(self, "Save changes",
+                                           "Save changes in %d files?" %
+                                           num_updated,
+                                           QtGui.QMessageBox.Yes |
+                                           QtGui.QMessageBox.No)
+        if reply == QtGui.QMessageBox.Yes:
+            self._save()
 
     def _on_te_description_tch(self):
         if self._current_image:
@@ -213,6 +245,45 @@ class MainWnd(QtGui.QMainWindow):
     def _on_about(self):
         from exifeditor import version
         QtGui.QMessageBox.about(self, version.NAME, version.INFO)
+
+    def _on_btn_description(self):
+        self._copy_to_selected(exif.Image.DESCRIPTION_TAG)
+
+    def _on_btn_comment(self):
+        self._copy_to_selected(exif.Image.COMMENT_TAG)
+
+    def _on_btn_artist(self):
+        self._copy_to_selected(exif.Image.ARTIST_TAG)
+
+    def _on_btn_datetime(self):
+        self._copy_to_selected(exif.Image.DATETIME_TAG)
+
+    def _on_btn_copyright(self):
+        self._copy_to_selected(exif.Image.COPYRIGHT_TAG)
+
+    def _copy_to_selected(self, tag):
+        sel_model = self.lv_files.selectionModel()
+        selected = sel_model.selectedRows()
+        if len(selected) < 2:
+            return
+        src_filename = self._current_image.path
+        sel_files = (unicode(self._lv_files_model.filePath(idx))
+                     for idx in selected)
+        dst_files = [fname for fname in sel_files if fname != src_filename]
+        self._filelist.copy_exif_tag(src_filename, dst_files, (tag, ))
+        for idx in selected:
+            self._lv_files_model.dataChanged.emit(idx, idx)
+
+    def _save(self):
+        """ Save changes. """
+        self.statusBar().showMessage('Saving...')
+        try:
+            self._filelist.save()
+        except Exception, err:
+            self.statusBar().showMessage('Error: %s' % err, 2000)
+        else:
+            self.statusBar().showMessage('Saved', 2000)
+        self._show_image(self._current_image.path)
 
 
 #  backup
