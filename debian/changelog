@@ -1,3 +1,9 @@
+exifeditor (0.0.3-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Karol Będkowski <karol.bedkowski@gmail.com>  Sat, 27 Dec 2014 17:01:48 +0100
+
 exifeditor (0.0.2-1) unstable; urgency=low
 
   * Initial release.
