@@ -35,18 +35,19 @@ class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
         super(MainWnd, self).__init__()
         self.setupUi(self)
 
-        self._current_path = None
-        self._current_image = None
-
         current_dir = None
+        start_file = None
         if args:
             current_dir = args[0]
             if os.path.isfile(current_dir):
+                start_file = current_dir
                 current_dir = os.path.dirname(current_dir)
         if not current_dir or not os.path.isdir(current_dir):
             current_dir = QtCore.QDir.currentPath()
 
         self._filelist = filelist.FileList()
+        self._current_path = current_dir
+        self._current_image = None
 
         # setup dirs tree
         self._tv_dirs_model = model = QtGui.QFileSystemModel(self)
@@ -86,6 +87,15 @@ class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
             idx = self._tv_dirs_model.index(current_dir)
             self.tv_dirs.scrollTo(idx, QtGui.QAbstractItemView.PositionAtTop)
             self.tv_dirs.expand(idx)
+
+            # select file if included in arguments
+            if start_file:
+                sel_model = self.lv_files.selectionModel()
+                idx = self._lv_files_model.index(start_file)
+                if idx.isValid():
+                    sel_model.select(idx,
+                                     QtGui.QItemSelectionModel.ClearAndSelect)
+                    sel_model.currentChanged.emit(idx, idx)
 
         QtCore.QTimer.singleShot(100, _scroll)
 
@@ -229,6 +239,8 @@ class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
 
     def _on_lv_files_selection(self, index):
         """ File select action. Show image & exif data. """
+        _LOG.debug('MainWnd._on_lv_files_selection: %r, %r', index,
+                   self._current_path)
         if not self._current_path:
             return
         item = self._lv_files_model.fileInfo(index).absoluteFilePath()
