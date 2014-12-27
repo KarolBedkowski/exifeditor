@@ -13,6 +13,7 @@ __version__ = "2014-11-11"
 
 import gettext
 import logging
+import os.path
 
 from PyQt4 import QtGui, QtCore
 
@@ -31,14 +32,21 @@ assert ui_main
 class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
     """ Main Window class. """
 
-    def __init__(self, _parent=None):
+    def __init__(self, args):
         super(MainWnd, self).__init__()
         self.setupUi(self)
 
         self._current_path = None
         self._current_image = None
 
-        current_dir = QtCore.QDir.currentPath()
+        current_dir = None
+        if args:
+            current_dir = args[0]
+            if os.path.isfile(current_dir):
+                current_dir = os.path.dirname(current_dir)
+        if not current_dir or not os.path.isdir(current_dir):
+            current_dir = QtCore.QDir.currentPath()
+
         self._filelist = filelist.FileList()
 
         # setup dirs tree

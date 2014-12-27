@@ -23,7 +23,9 @@ from exifeditor import version
 
 def _parse_opt():
     """ Parse cli options. """
-    optp = optparse.OptionParser(version=version.NAME + version.VERSION)
+    optp = optparse.OptionParser(usage="%prog [options] [startup dir]",
+                                 version=version.NAME + version.VERSION,
+                                 description="Simple exif editor")
     group = optparse.OptionGroup(optp, "Debug options")
     group.add_option("--debug", "-d", action="store_true", default=False,
                      help="enable debug messages")
@@ -32,13 +34,13 @@ def _parse_opt():
     group.add_option("--shell", action="store_true", default=False,
                      help="start shell")
     optp.add_option_group(group)
-    return optp.parse_args()[0]
+    return optp.parse_args()
 
 
 def run():
     """ Run application. """
     # parse options
-    options = _parse_opt()
+    options, args = _parse_opt()
 
     # logowanie
     from exifeditor.lib.logging_setup import logging_setup
@@ -70,7 +72,7 @@ def run():
 
     from exifeditor.gui import main_wnd
 
-    window = main_wnd.MainWnd()
+    window = main_wnd.MainWnd(args)
     window.show()
     app.exec_()
 
