@@ -17,8 +17,8 @@ CLASSIFIERS = [
 
 REQUIRES = [
     'setuptools',
-    'gexiv2',
-    'pyqt4',
+    'GExiv2',
+    # 'PyQt4',
 ]
 
 setup(

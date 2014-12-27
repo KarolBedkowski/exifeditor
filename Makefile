@@ -23,5 +23,5 @@ $(COMPILED_DIR)/_ui_%.py : $(RESOURCE_DIR)/%.ui
 $(COMPILED_DIR)/_%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
 
-clean :
+clean_res :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
