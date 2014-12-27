@@ -11,7 +11,6 @@ __author__ = u"Karol Będkowski"
 __copyright__ = u"Copyright (c) Karol Będkowski, 2014"
 __version__ = "2014-11-11"
 
-import gettext
 import logging
 import os.path
 
@@ -22,7 +21,6 @@ from exifeditor.gui import resources_rc
 from exifeditor.gui import ui_main
 from exifeditor.logic import exif, filelist
 
-_ = gettext.gettext
 _LOG = logging.getLogger(__name__)
 
 assert resources_rc

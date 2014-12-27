@@ -3,7 +3,7 @@
 
 Copyright (c) Karol Będkowski, 2013
 
-This file is part of wxGTD
+This file is part of exifeditor
 Licence: GPLv2+
 """
 
