@@ -29,7 +29,7 @@ tags
 info/
 docs/
 man/*.1
-exifeditor/gui/_*_rc.py
-exifeditor/gui/_ui_*.py
+exifeditor/gui/*_rc.py
+exifeditor/gui/ui_*.py
 docs.dev/
 

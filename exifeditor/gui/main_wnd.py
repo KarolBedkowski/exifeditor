@@ -11,8 +11,8 @@ __author__ = u"Karol Będkowski"
 __copyright__ = u"Copyright (c) Karol Będkowski, 2014"
 __version__ = "2014-11-11"
 
-import gettext
 import logging
+import os.path
 
 from PyQt4 import QtGui, QtCore
 
@@ -20,8 +20,8 @@ from exifeditor.gui import _models
 from exifeditor.gui import resources_rc
 from exifeditor.gui import ui_main
 from exifeditor.logic import exif, filelist
+from exifeditor.lib import appconfig
 
-_ = gettext.gettext
 _LOG = logging.getLogger(__name__)
 
 assert resources_rc
@@ -31,15 +31,23 @@ assert ui_main
 class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
     """ Main Window class. """
 
-    def __init__(self, _parent=None):
+    def __init__(self, args):
         super(MainWnd, self).__init__()
         self.setupUi(self)
 
-        self._current_path = None
-        self._current_image = None
+        current_dir = None
+        start_file = None
+        if args:
+            current_dir = args[0]
+            if os.path.isfile(current_dir):
+                start_file = current_dir
+                current_dir = os.path.dirname(current_dir)
+        if not current_dir or not os.path.isdir(current_dir):
+            current_dir = QtCore.QDir.currentPath()
 
-        current_dir = QtCore.QDir.currentPath()
         self._filelist = filelist.FileList()
+        self._current_path = current_dir
+        self._current_image = None
 
         # setup dirs tree
         self._tv_dirs_model = model = QtGui.QFileSystemModel(self)
@@ -68,11 +76,26 @@ class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
 
         self._bind()
 
+        # restore size
+        aconf = appconfig.AppConfig()
+        width = aconf.get('main_wnd.width', 1024)
+        height = aconf.get('main_wnd.height', 700)
+        self.resize(width, height)
+
         # scroll to current dir
         def _scroll():
             idx = self._tv_dirs_model.index(current_dir)
             self.tv_dirs.scrollTo(idx, QtGui.QAbstractItemView.PositionAtTop)
             self.tv_dirs.expand(idx)
+
+            # select file if included in arguments
+            if start_file:
+                sel_model = self.lv_files.selectionModel()
+                idx = self._lv_files_model.index(start_file)
+                if idx.isValid():
+                    sel_model.select(idx,
+                                     QtGui.QItemSelectionModel.ClearAndSelect)
+                    sel_model.currentChanged.emit(idx, idx)
 
         QtCore.QTimer.singleShot(100, _scroll)
 
@@ -178,6 +201,20 @@ class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
         self.tv_info.resizeColumnToContents(0)
         self.tv_info.resizeColumnToContents(1)
 
+    def closeEvent(self, event):
+        reply = QtGui.QMessageBox.question(self, 'Exit',
+                                           "Are you sure to quit?",
+                                           QtGui.QMessageBox.Yes,
+                                           QtGui.QMessageBox.No)
+        if reply == QtGui.QMessageBox.No:
+            event.ignore()
+            return
+        aconf = appconfig.AppConfig()
+        size = self.size()
+        aconf['main_wnd.width'] = size.width()
+        aconf['main_wnd.height'] = size.height()
+        event.accept()
+
     def _on_tv_dirs_activated(self, index):
         """ Select directory action. Show file list. """
         node = self._tv_dirs_model.fileInfo(index).absoluteFilePath()
@@ -202,6 +239,8 @@ class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
 
     def _on_lv_files_selection(self, index):
         """ File select action. Show image & exif data. """
+        _LOG.debug('MainWnd._on_lv_files_selection: %r, %r', index,
+                   self._current_path)
         if not self._current_path:
             return
         item = self._lv_files_model.fileInfo(index).absoluteFilePath()
