@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with python2 
+
+override_dh_auto_configure:
+#	python $(CURDIR)/setup.py make_mo
+#	python $(CURDIR)/setup.py make_man
+	make
+
+override_dh_auto_install:
+	python setup.py install --root=debian/exifeditor --install-layout=deb --install-scripts=/usr/bin/
+	# --install-lib=/usr/share/exifeditor 
+	cp -v exifeditor*.py* debian/exifeditor/usr/share/exifeditor/
+	mkdir -p debian/exifeditor/usr/share/applications/
+	cp -v data/*.desktop debian/exifeditor/usr/share/applications/
+	cp -vr data debian/exifeditor/usr/share/exifeditor/
+
+clean::
+	dh $@ --with python2
+	rm -rf build/ _build/ exifeditor.egg-info/ .ropeproject/ *.log
+	find . -name '*.pyc' -delete

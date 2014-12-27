@@ -1,0 +1,3 @@
+?package(exifeditor):needs="X11" section="Applications/Graphics"\
+  title="ExifEditor" command="/usr/bin/exifeditor"
+
