@@ -20,6 +20,7 @@ from exifeditor.gui import _models
 from exifeditor.gui import resources_rc
 from exifeditor.gui import ui_main
 from exifeditor.logic import exif, filelist
+from exifeditor.lib import appconfig
 
 _LOG = logging.getLogger(__name__)
 
@@ -73,6 +74,12 @@ class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
         self.tv_info.setModel(model)
 
         self._bind()
+
+        # restore size
+        aconf = appconfig.AppConfig()
+        width = aconf.get('main_wnd.width', 1024)
+        height = aconf.get('main_wnd.height', 700)
+        self.resize(width, height)
 
         # scroll to current dir
         def _scroll():
@@ -183,6 +190,20 @@ class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
         self.tv_info.expandAll()
         self.tv_info.resizeColumnToContents(0)
         self.tv_info.resizeColumnToContents(1)
+
+    def closeEvent(self, event):
+        reply = QtGui.QMessageBox.question(self, 'Exit',
+                                           "Are you sure to quit?",
+                                           QtGui.QMessageBox.Yes,
+                                           QtGui.QMessageBox.No)
+        if reply == QtGui.QMessageBox.No:
+            event.ignore()
+            return
+        aconf = appconfig.AppConfig()
+        size = self.size()
+        aconf['main_wnd.width'] = size.width()
+        aconf['main_wnd.height'] = size.height()
+        event.accept()
 
     def _on_tv_dirs_activated(self, index):
         """ Select directory action. Show file list. """
