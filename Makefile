@@ -7,21 +7,21 @@ RESOURCES = $(wildcard ${RESOURCE_DIR}/*.qrc)
 PYUIC = pyuic4
 PYRCC = pyrcc4
 
-COMPILED_UI = $(UI_FILES:$(RESOURCE_DIR)/%.ui=$(COMPILED_DIR)/_ui_%.py)
-COMPILED_RESOURCES = $(RESOURCES:$(RESOURCE_DIR)/%.qrc=$(COMPILED_DIR)/_%_rc.py)
+COMPILED_UI = $(UI_FILES:$(RESOURCE_DIR)/%.ui=$(COMPILED_DIR)/ui_%.py)
+COMPILED_RESOURCES = $(RESOURCES:$(RESOURCE_DIR)/%.qrc=$(COMPILED_DIR)/%_rc.py)
 
-all : resources 
-	#ui
+all : resources ui
 
 resources : $(COMPILED_RESOURCES)
 
 ui : $(COMPILED_UI)
 
-$(COMPILED_DIR)/_ui_%.py : $(RESOURCE_DIR)/%.ui
+$(COMPILED_DIR)/ui_%.py : $(RESOURCE_DIR)/%.ui
 	$(PYUIC) $< -o $@
 
-$(COMPILED_DIR)/_%_rc.py : $(RESOURCE_DIR)/%.qrc
+$(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
 
-clean_res :
+clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
+	$(RM) -rf _build build dist 

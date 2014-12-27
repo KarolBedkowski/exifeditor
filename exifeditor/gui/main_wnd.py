@@ -14,26 +14,26 @@ __version__ = "2014-11-11"
 import gettext
 import logging
 
-from PyQt4 import QtGui, uic, QtCore
+from PyQt4 import QtGui, QtCore
 
 from exifeditor.gui import _models
-from exifeditor.gui import _resources_rc
-from exifeditor.lib.appconfig import AppConfig
+from exifeditor.gui import resources_rc
+from exifeditor.gui import ui_main
 from exifeditor.logic import exif, filelist
 
 _ = gettext.gettext
 _LOG = logging.getLogger(__name__)
 
-assert _resources_rc
+assert resources_rc
+assert ui_main
 
 
-class MainWnd(QtGui.QMainWindow):
+class MainWnd(QtGui.QMainWindow, ui_main.Ui_MainWindow):
     """ Main Window class. """
 
     def __init__(self, _parent=None):
         super(MainWnd, self).__init__()
-        self._appconfig = AppConfig()
-        uic.loadUi(self._appconfig.get_data_file("main.ui"), self)
+        self.setupUi(self)
 
         self._current_path = None
         self._current_image = None
